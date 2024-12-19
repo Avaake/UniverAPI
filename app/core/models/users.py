@@ -12,6 +12,7 @@ class User(Base):
     last_name: Mapped[str] = mapped_column(VARCHAR(50))
     email: Mapped[str] = mapped_column(VARCHAR(100), unique=True)
     phone_number: Mapped[str] = mapped_column(VARCHAR(20), unique=True)
+    password: Mapped[str] = mapped_column(VARCHAR(100))
     role_id: Mapped[int] = mapped_column(
         ForeignKey("roles.id", ondelete="CASCADE"), default=1, server_default=text("1")
     )
