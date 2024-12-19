@@ -38,7 +38,6 @@ class Settings(BaseSettings):
         env_nested_delimiter="__",
         env_prefix="APP_CONFIG__",
     )
-    testing: bool = False
     db: DBConfig
     auth_jwt: AuthJWTConfig
     api_prefix: APIPrefix = APIPrefix()
