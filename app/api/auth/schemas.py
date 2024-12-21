@@ -5,8 +5,9 @@ from pydantic import (
     Field,
     field_validator,
     model_validator,
+    computed_field,
 )
-from typing import Annotated, Self
+from typing import Annotated, Self, Optional
 import re
 from app.api.auth.utis import get_password_hash
 
@@ -59,3 +60,37 @@ class AuthLoginSchema(EmailSchema):
     password: Annotated[
         str, Field(min_length=5, max_length=100, description="Password of the user.")
     ]
+
+
+class RoleSchema(BaseModel):
+    id: int
+    name: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AuthUserReadSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    first_name: Annotated[
+        str,
+        Field(min_length=4, max_length=50, description="The first name of the user."),
+    ]
+    last_name: Annotated[
+        str,
+        Field(min_length=4, max_length=50, description="The last name of the user."),
+    ]
+    email: Annotated[EmailStr, Field(description="Email address")]
+    phone_number: Annotated[
+        str,
+        Field(min_length=5, max_length=15, description="The phone number of the user."),
+    ]
+
+    role: RoleSchema = Field(exclude=True)
+
+    @computed_field
+    def role_name(self) -> str:
+        return self.role.name
+
+    @computed_field
+    def role_id(self) -> int:
+        return self.role.id

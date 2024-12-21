@@ -30,6 +30,8 @@ class DBConfig(BaseModel):
 class AuthJWTConfig(BaseSettings):
     algorithm: str = "HS256"
     secret_key: str
+    access_token_expire_day: int = 15
+    refresh_token_expire_day: int = 40
 
 
 class Settings(BaseSettings):
