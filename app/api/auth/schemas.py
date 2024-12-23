@@ -7,7 +7,7 @@ from pydantic import (
     model_validator,
     computed_field,
 )
-from typing import Annotated, Self, Optional
+from typing import Annotated, Self
 import re
 from app.api.auth.utis import get_password_hash
 
