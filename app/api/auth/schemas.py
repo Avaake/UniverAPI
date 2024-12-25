@@ -10,6 +10,7 @@ from pydantic import (
 from typing import Annotated, Self
 import re
 from app.api.auth.utis import get_password_hash
+from app.api.roles.schemas import RoleSchemaRead
 
 
 class EmailSchema(BaseModel):
@@ -62,12 +63,6 @@ class AuthLoginSchema(EmailSchema):
     ]
 
 
-class RoleSchema(BaseModel):
-    id: int
-    name: str
-    model_config = ConfigDict(from_attributes=True)
-
-
 class AuthUserReadSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -85,7 +80,7 @@ class AuthUserReadSchema(BaseModel):
         Field(min_length=5, max_length=15, description="The phone number of the user."),
     ]
 
-    role: RoleSchema = Field(exclude=True)
+    role: RoleSchemaRead = Field(exclude=True)
 
     @computed_field
     def role_name(self) -> str:
