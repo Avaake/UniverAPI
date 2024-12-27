@@ -12,10 +12,15 @@ class BaseDAO(Generic[T]):
     model = None
 
     @classmethod
-    async def get_one_or_none(cls, session: AsyncSession, filters: BaseModel):
+    async def get_one_or_none(cls, session: AsyncSession, filters: BaseModel | dict):
         try:
-            filter_dict = filters.model_dump(exclude_unset=True)
-            query = select(cls.model).filter_by(**filter_dict)
+            filters_dict = (
+                filters.model_dump(exclude_unset=True)
+                if isinstance(filters, BaseModel)
+                else filters.copy()
+            )
+
+            query = select(cls.model).filter_by(**filters_dict)
             result = await session.execute(query)
             record = result.scalar_one_or_none()
             return record
@@ -45,13 +50,13 @@ class BaseDAO(Generic[T]):
             raise e
 
     @classmethod
-    async def get_all(
-        cls, session: AsyncSession, filters: Union[BaseModel, None] = None
-    ):
-        if filters is None:
+    async def get_all(cls, session: AsyncSession, filters: BaseModel | dict = None):
+        if isinstance(filters, BaseModel):
+            filters_dict = filters.model_dump(exclude_unset=True)
+        elif filters is None:
             filters_dict = {}
         else:
-            filters_dict = filters.model_dump(exclude_unset=True)
+            filters_dict = filters.copy()
         try:
             query = select(cls.model).filter_by(**filters_dict)
             result = await session.execute(query)
@@ -62,24 +67,38 @@ class BaseDAO(Generic[T]):
 
     @classmethod
     async def update(
-        cls, session: AsyncSession, values: BaseModel, filters: BaseModel | dict
+        cls, session: AsyncSession, values: BaseModel | dict, filters: BaseModel | dict
     ):
         try:
-            if isinstance(filters, BaseModel):
-                filters_dict = filters.model_dump(exclude_unset=True)
-            else:
-                filters_dict = filters.copy()
-            values_dict = values.model_dump(exclude_unset=True)
+            filters_dict = (
+                filters.model_dump(exclude_unset=True)
+                if isinstance(filters, BaseModel)
+                else filters.copy()
+            )
+
+            values_dict = (
+                values.model_dump(exclude_unset=True)
+                if isinstance(values, BaseModel)
+                else values.copy()
+            )
+
             query = (
                 update(cls.model)
                 .where(*[getattr(cls.model, k) == v for k, v in filters_dict.items()])
                 .values(**values_dict)
                 .execution_options(synchronize_session="fetch")
             )
-            record = await session.execute(query)
+            await session.execute(query)
+
+            update_record = await cls.get_one_or_none(session, filters=filters_dict)
+
             await session.commit()
-            return record.rowcount
+            if update_record is None:
+                return None
+            return update_record
+
         except SQLAlchemyError as e:
+            await session.rollback()
             raise e
 
     @classmethod
@@ -94,4 +113,5 @@ class BaseDAO(Generic[T]):
             await session.commit()
             return record.rowcount
         except SQLAlchemyError as e:
+            await session.rollback()
             raise e

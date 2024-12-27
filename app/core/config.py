@@ -11,6 +11,7 @@ class APIPrefix(BaseModel):
     api_v1: str = "/api/v1"
     auth: str = "/auth"
     role: str = "/roles"
+    user: str = "/users"
 
 
 class DBConfig(BaseModel):

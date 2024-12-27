@@ -8,7 +8,6 @@ from app.api.auth.schemas import (
     AuthLoginSchema,
     AuthRegistrationSchema,
     EmailSchema,
-    AuthUserReadSchema,
 )
 from app.api.auth.auth import (
     authenticate_user,
@@ -16,7 +15,6 @@ from app.api.auth.auth import (
     create_refresh_token,
 )
 from app.api.auth.dependencies import (
-    get_current_user_access_token,
     get_current_user_refresh_token,
 )
 
@@ -92,15 +90,8 @@ async def refresh(
     }
 
 
-@router.post("/logout")
+@router.get("/logout")
 async def logout(response: Response) -> dict:
     response.delete_cookie(key="access_token")
     response.delete_cookie(key="refresh_token")
     return {"message": "The user has successfully logged out"}
-
-
-@router.get("/me")
-async def get_me(
-    user_data: Annotated[AuthUserReadSchema, Depends(get_current_user_access_token)]
-) -> AuthUserReadSchema:
-    return AuthUserReadSchema.model_validate(user_data)
