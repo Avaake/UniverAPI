@@ -10,14 +10,14 @@ Role API:\
 POST /roles\
 GET /roles\
 GET /roles/{role_id}\q
-PETCH /roles/{role_id}\
+PUT /roles/{role_id}\
 DELETE /roles/{role_id}
 
 User API:\
 GET /users/me\
 GET /users/{user_id}\
 GET /users/roles/{role_name}\
-PATCH /users/{user_id}/role/{role_id}\
+PATCH /users/{user_id}/role\
 PATCH /users/{user_id}\
 DELETE /users/{user_id}
 

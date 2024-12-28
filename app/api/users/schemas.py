@@ -38,15 +38,7 @@ class UserBaseSchema(BaseModel):
 class UserReadSchema(UserBaseSchema):
     model_config = ConfigDict(from_attributes=True)
     id: int
-    role: RoleSchemaRead = Field(exclude=True)
-
-    @computed_field
-    def role_name(self) -> str:
-        return self.role.name
-
-    @computed_field
-    def role_id(self) -> int:
-        return self.role.id
+    role_id: int
 
 
 class UserReadListSchema(BaseModel):
@@ -67,3 +59,8 @@ class UserUpdateSchema(UserBaseSchema):
     phone_number: Annotated[
         Optional[str], Field(min_length=5, max_length=20, description="Phone number")
     ] = None
+
+
+class UserRoleIDSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    role_id: Annotated[int, Field(ge=0, description="User ID")]
