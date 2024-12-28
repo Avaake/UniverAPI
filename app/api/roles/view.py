@@ -1,11 +1,11 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.api.auth.dependencies import get_current_admin_user
-from app.api.roles.dao import RoleDAO
 from app.api.roles.schemas import BaseRoleSchema, RoleSchemaRead
 from fastapi import APIRouter, Depends, HTTPException, status
+from app.api.auth.dependencies import get_current_admin_user
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.core import settings, User, db_helper
+from app.api.roles.dao import RoleDAO
 from typing import Annotated, Union
+
 
 router = APIRouter(prefix=settings.api_prefix.role, tags=["Role"])
 
@@ -35,7 +35,7 @@ async def get_role(
     return {"roles": roles}
 
 
-@router.get("/{id}", status_code=status.HTTP_200_OK)
+@router.get("/{role_id}", status_code=status.HTTP_200_OK)
 async def get_role_by_id(
     role_id: int,
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
@@ -49,7 +49,7 @@ async def get_role_by_id(
     return {"role": role}
 
 
-@router.patch("/{id}", status_code=status.HTTP_200_OK)
+@router.patch("/{role_id}", status_code=status.HTTP_200_OK)
 async def update_role(
     role_id: int,
     role_data: BaseRoleSchema,
@@ -62,13 +62,15 @@ async def update_role(
     if role:
         return {
             "message": "Role updated",
-            "role": {"id": role_id, "name": role_data.name},
+            "role": role,
         }
-    else:
-        return {"message": "Role not found", "role_id": role_id}
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Failed to update user. Please try again later.",
+    )
 
 
-@router.delete("/{id}")
+@router.delete("/{role_id}")
 async def delete_role(
     role_id: int,
     current_user: Annotated[User, Depends(get_current_admin_user)],

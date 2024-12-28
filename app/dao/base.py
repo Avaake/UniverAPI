@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, Union
+from typing import TypeVar, Generic
 from app.core import Base
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession

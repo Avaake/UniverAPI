@@ -7,15 +7,22 @@ GET /auth/refresh\
 GET /auth/logout
 
 Role API:\
-POST /role\
-GET /role\
-GET /role/{role_id}\q
-PETCH /role/{role_id}\
-DELETE /role/{role_id}
+POST /roles\
+GET /roles\
+GET /roles/{role_id}\q
+PETCH /roles/{role_id}\
+DELETE /roles/{role_id}
 
 User API:\
 GET /users/me\
 GET /users/{user_id}\
 GET /users/roles/{role_name}\
-PATCH /users/{user_id}/role/{role_id}
-PATCH /users/{user_id}qq
+PATCH /users/{user_id}/role/{role_id}\
+PATCH /users/{user_id}\
+DELETE /users/{user_id}
+
+Group API:'\
+POST /groups\
+GET /groups\
+PUT /groups/{group_id}\
+DELETE /groups/{group_id}
