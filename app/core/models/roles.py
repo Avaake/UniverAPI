@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.core import User
+    from app.core import User, StudentEnrollment
 
 
 class Role(Base):
