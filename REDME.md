@@ -26,3 +26,10 @@ POST /groups\
 GET /groups\
 PUT /groups/{group_id}\
 DELETE /groups/{group_id}
+
+Speciality API:\
+
+POST /speciality\
+GET /speciality/{speciality_id}\
+PATCH /speciality/{speciality_id}\
+DELETE /speciality/{speciality_id}\

@@ -13,6 +13,7 @@ class APIPrefix(BaseModel):
     role: str = "/roles"
     user: str = "/users"
     group: str = "/groups"
+    specialities: str = "/specialities"
 
 
 class DBConfig(BaseModel):
