@@ -14,6 +14,7 @@ class APIPrefix(BaseModel):
     user: str = "/users"
     group: str = "/groups"
     specialities: str = "/specialities"
+    courses: str = "/courses"
 
 
 class DBConfig(BaseModel):

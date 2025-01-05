@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import VARCHAR, ForeignKey, text
 
 if TYPE_CHECKING:
-    from app.core import Role, Enrollment
+    from app.core import Role, Enrollment, Course
 
 
 class User(Base):
@@ -18,6 +18,7 @@ class User(Base):
     )
     role: Mapped["Role"] = relationship(back_populates="users")
     enrollments: Mapped[list["Enrollment"]] = relationship(back_populates="user")
+    courses: Mapped[list["Course"]] = relationship(back_populates="user")
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id})"

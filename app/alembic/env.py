@@ -18,6 +18,7 @@ from app.core.models.users import User
 from app.core.models.group import Group
 from app.core.models.speciality import Speciality
 from app.core.models.enrollment import Enrollment
+from app.core.models.course import Course
 
 config = context.config
 config.set_main_option("sqlalchemy.url", str(settings.db.url))

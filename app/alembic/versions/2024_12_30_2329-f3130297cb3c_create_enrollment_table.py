@@ -1,4 +1,4 @@
-"""create enrollment table
+"""create course table
 
 Revision ID: f3130297cb3c
 Revises: 89c8a1d57b38

@@ -7,6 +7,7 @@ __all__ = [
     "Group",
     "Speciality",
     "Enrollment",
+    "Course",
 ]
 
 from .config import settings
@@ -17,3 +18,4 @@ from app.core.models.roles import Role
 from app.core.models.group import Group
 from app.core.models.speciality import Speciality
 from app.core.models.enrollment import Enrollment
+from app.core.models.course import Course
