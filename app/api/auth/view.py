@@ -21,7 +21,7 @@ from app.api.auth.dependencies import (
 router = APIRouter(prefix=settings.api_prefix.auth, tags=["Auth"])
 
 
-@router.post("/register")
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(
     user_data: AuthRegistrationSchema,
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],

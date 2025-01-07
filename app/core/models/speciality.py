@@ -12,7 +12,7 @@ class Speciality(Base):
     name: Mapped[str] = mapped_column(VARCHAR(length=100), nullable=False, unique=True)
     descriptions: Mapped[str] = mapped_column(TEXT, nullable=True)
 
-    enrollments: Mapped[list["Enrollment"]] = relationship(back_populates="user")
+    enrollments: Mapped[list["Enrollment"]] = relationship(back_populates="speciality")
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id})"

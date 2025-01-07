@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 class Group(Base):
     name: Mapped[str] = mapped_column(VARCHAR(length=50), unique=True, nullable=False)
 
-    enrollments: Mapped[list["Enrollment"]] = relationship(back_populates="user")
+    enrollments: Mapped[list["Enrollment"]] = relationship(back_populates="group")
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id})"

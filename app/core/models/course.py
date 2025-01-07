@@ -1,7 +1,7 @@
 from app.core import Base
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from typing import TYPE_CHECKING
-from sqlalchemy import ForeignKey, VARCHAR, TEXT
+from sqlalchemy import ForeignKey, VARCHAR, TEXT, INTEGER
 
 if TYPE_CHECKING:
     from app.core import User
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 class Course(Base):
     name: Mapped[str] = mapped_column(VARCHAR(length=70), unique=True)
     description: Mapped[str] = mapped_column(TEXT)
-    course_hours: Mapped[float] = mapped_column(nullable=False)
+    credit_hours: Mapped[int] = mapped_column(nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
     user: Mapped["User"] = relationship(back_populates="courses")
