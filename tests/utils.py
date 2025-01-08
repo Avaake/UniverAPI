@@ -5,6 +5,7 @@ from httpx import AsyncClient, ASGITransport
 from contextlib import asynccontextmanager
 from asgi_lifespan import LifespanManager
 from typing import AsyncGenerator
+from sqlalchemy import NullPool
 
 
 ClientManagerType = AsyncGenerator[AsyncClient, None]
@@ -14,6 +15,7 @@ metadata = Base.metadata
 engine_test = create_async_engine(
     DATABASE_URL,
     echo=False,
+    poolclass=NullPool,
 )
 async_session_maker = async_sessionmaker(
     bind=engine_test,
@@ -39,7 +41,6 @@ def test_data(session: AsyncSession):
     role_teacher = Role(name="teacher")
     role_student = Role(name="student")
     session.add_all([default_role, role_admin, role_teacher, role_student])
-
     # User
     admin_user = User(
         first_name="admin",
@@ -68,11 +69,9 @@ def test_data(session: AsyncSession):
     session.add(admin_user)
     session.add(tomas_teacher_user)
     session.add(john_student_user)
-
     first_group = Group(name="LL25/1")
     second_group = Group(name="SE25")
     session.add_all([first_group, second_group])
-
     # Speciality
     first_speciality = Speciality(
         name="International law",
@@ -83,7 +82,6 @@ def test_data(session: AsyncSession):
         descriptions="Software engineering",
     )
     session.add_all([first_speciality, second_speciality])
-
     # Course
     sql_course = Course(
         name="SQL",
@@ -92,7 +90,6 @@ def test_data(session: AsyncSession):
         user=tomas_teacher_user,
     )
     session.add(sql_course)
-
     # Enrollment
     first_enrollment = Enrollment(
         user=john_student_user,

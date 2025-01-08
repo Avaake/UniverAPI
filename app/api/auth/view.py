@@ -16,6 +16,7 @@ from app.api.auth.auth import (
 )
 from app.api.auth.dependencies import (
     get_current_user_refresh_token,
+    get_current_user_access_token,
 )
 
 router = APIRouter(prefix=settings.api_prefix.auth, tags=["Auth"])
@@ -95,3 +96,10 @@ async def logout(response: Response) -> dict:
     response.delete_cookie(key="access_token")
     response.delete_cookie(key="refresh_token")
     return {"message": "The user has successfully logged out"}
+
+
+@router.get("/protected")
+async def protected(
+    current_user: Annotated[User, Depends(get_current_user_access_token)],
+) -> dict:
+    return {"message": "You are authorized"}

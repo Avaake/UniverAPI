@@ -36,7 +36,7 @@ async def engine():
     await insert_into_tables()
 
     yield engine_test
-
+    await engine_test.dispose()
     async with engine_test.begin() as conn:
         await conn.run_sync(metadata.drop_all)
 
@@ -44,12 +44,33 @@ async def engine():
 @pytest_asyncio.fixture(scope="module")
 async def token_admin(async_client):
     user_data = {
-        "email": "testuser@gmail.com",
-        "password": "qwerty1",
+        "email": "admin@gmail.com",
+        "password": "qwerty",
     }
     response = await async_client.post("/api/v1/auth/login", json=user_data)
     data = response.json()
+    yield data["access_token"], data["refresh_token"]
 
+
+@pytest_asyncio.fixture(scope="module")
+async def token_tomas_teacher(async_client):
+    user_data = {
+        "email": "tamas@gmail.com",
+        "password": "qwerty",
+    }
+    response = await async_client.post("/api/v1/auth/login", json=user_data)
+    data = response.json()
+    yield data["access_token"], data["refresh_token"]
+
+
+@pytest_asyncio.fixture(scope="module")
+async def token_john_student(async_client):
+    user_data = {
+        "email": "john@gmail.com",
+        "password": "qwerty",
+    }
+    response = await async_client.post("/api/v1/auth/login", json=user_data)
+    data = response.json()
     yield data["access_token"], data["refresh_token"]
 
 
