@@ -11,7 +11,7 @@ class Course(Base):
     name: Mapped[str] = mapped_column(VARCHAR(length=70), unique=True)
     description: Mapped[str] = mapped_column(TEXT)
     credit_hours: Mapped[int] = mapped_column(nullable=False)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
 
     user: Mapped["User"] = relationship(back_populates="courses")
 

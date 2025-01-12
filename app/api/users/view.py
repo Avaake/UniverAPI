@@ -50,7 +50,7 @@ async def get_users_by_role(
 async def update_user_role(
     user_id: Annotated[int, Path(ge=0)],
     role_data: UserRoleIDSchema,
-    current_user: Annotated[User, Depends(get_current_user_access_token)],
+    current_user: Annotated[User, Depends(get_current_admin_user)],
     check_user: Annotated[User, Depends(check_user_by_id)],
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ) -> dict[str, Union[str, UserReadSchema]]:

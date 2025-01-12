@@ -36,15 +36,10 @@ async def test_login(async_client):
 
 
 @pytest.mark.asyncio
-async def test_logout(async_client, token_admin):
-    # async_client.cookies.set("access_token", token_admin[0])
-    # async_client.cookies.set("refresh_token", token_admin[1])
-    #
-    cookies = {
-        "access_token": token_admin[0],
-        "refresh_token": token_admin[1],
-    }
-    response = await async_client.get("/api/v1/auth/logout", cookies=cookies)
+async def test_logout(async_client):
+    response = await async_client.get(
+        "/api/v1/auth/logout",
+    )
 
     assert response.status_code == 200
     assert response.json()["message"] == "The user has successfully logged out"
@@ -57,7 +52,7 @@ async def test_logout(async_client, token_admin):
 
 
 @pytest.mark.asyncio
-async def test_invalid_login(async_client, token_admin):
+async def test_invalid_login(async_client):
     user_data = {
         "email": "testuser@gmail.com",
         "password": "qwerty_password",

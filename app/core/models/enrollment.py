@@ -12,10 +12,14 @@ class Enrollment(Base):
     User-Group-Speciality association
     """
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=True)
-    group_id: Mapped[int] = mapped_column(ForeignKey("groups.id"), nullable=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=True
+    )
+    group_id: Mapped[int] = mapped_column(
+        ForeignKey("groups.id", ondelete="CASCADE"), nullable=True
+    )
     speciality_id: Mapped[int] = mapped_column(
-        ForeignKey("specialities.id"), nullable=True
+        ForeignKey("specialities.id", ondelete="CASCADE"), nullable=True
     )
     academic_year: Mapped[int] = mapped_column(SmallInteger, nullable=True)
 
