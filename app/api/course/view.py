@@ -60,7 +60,7 @@ async def update_course(
             "course": CourseReadSchema(**course.to_dict()),
         }
     raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail="Failed to delete user. Please try again later.",
     )
 
@@ -74,7 +74,7 @@ async def delete_course(
     course_deleted = await CourseDAO.delete(session=session, filters={"id": course_id})
     if not course_deleted:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete user. Please try again later.",
         )
     return

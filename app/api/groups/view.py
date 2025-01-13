@@ -53,7 +53,7 @@ async def update_group(
             "group": GroupReadSchema(**check_group.to_dict()),
         }
     raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail="Failed to update user role. Please try again later.",
     )
 
@@ -68,7 +68,7 @@ async def delete_group(
     user_deleted = await GroupDAO.delete(session=session, filters={"id": group_id})
     if not user_deleted:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete user. Please try again later.",
         )
     return

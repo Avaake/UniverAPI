@@ -57,7 +57,7 @@ async def update_speciality(
             "speciality": SpecialityReadSchema(**speciality.to_dict()),
         }
     raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail="Failed to update user role. Please try again later.",
     )
 
@@ -73,7 +73,7 @@ async def delete_speciality(
     )
     if not speciality_deleted:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete user. Please try again later.",
         )
     return
