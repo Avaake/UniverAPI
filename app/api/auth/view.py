@@ -48,28 +48,36 @@ async def login(
     user_data: AuthLoginSchema,
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ) -> dict:
-    user = await authenticate_user(
-        email=user_data.email, password=user_data.password, session=session
-    )
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+    try:
+        user = await authenticate_user(
+            email=user_data.email, password=user_data.password, session=session
         )
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+            )
 
-    payload_dict = {"sub": str(user.id)}
+        payload_dict = {"sub": str(user.id)}
 
-    access_token = create_access_token(payload_dict)
-    refresh_token = create_refresh_token(payload_dict)
+        access_token = create_access_token(payload_dict)
+        refresh_token = create_refresh_token(payload_dict)
 
-    response.set_cookie(key="access_token", value=access_token, httponly=True)
-    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True)
+        response.set_cookie(key="access_token", value=access_token, httponly=True)
+        response.set_cookie(key="refresh_token", value=refresh_token, httponly=True)
 
-    return {
-        "message": "You have been logged in!",
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-    }
+        return {
+            "message": "You have been logged in!",
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.get("/refresh")
@@ -77,29 +85,47 @@ async def refresh(
     response: Response,
     user_data: Annotated[User, Depends(get_current_user_refresh_token)],
 ):
-    payload_dict = {"sub": str(user_data.id)}
+    try:
+        payload_dict = {"sub": str(user_data.id)}
 
-    access_token = create_access_token(payload_dict)
-    refresh_token = create_refresh_token(payload_dict)
+        access_token = create_access_token(payload_dict)
+        refresh_token = create_refresh_token(payload_dict)
 
-    response.set_cookie(key="access_token", value=access_token, httponly=True)
-    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True)
+        response.set_cookie(key="access_token", value=access_token, httponly=True)
+        response.set_cookie(key="refresh_token", value=refresh_token, httponly=True)
 
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-    }
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.get("/logout")
 async def logout(response: Response) -> dict:
-    response.delete_cookie(key="access_token")
-    response.delete_cookie(key="refresh_token")
-    return {"message": "The user has successfully logged out"}
+    try:
+        response.delete_cookie(key="access_token")
+        response.delete_cookie(key="refresh_token")
+        return {"message": "The user has successfully logged out"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.get("/protected")
 async def protected(
     current_user: Annotated[User, Depends(get_current_user_access_token)],
 ) -> dict:
-    return {"message": "You are authorized"}
+    try:
+        return {"message": "You are authorized"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )

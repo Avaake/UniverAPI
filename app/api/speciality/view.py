@@ -18,16 +18,24 @@ async def create_speciality(
     speciality_data: SpecialityBaseSchema,
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ):
-    check_speciality = await SpecialityDAO.get_one_or_none(
-        session=session, filters={"name": speciality_data.name}
-    )
-    if check_speciality:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Group already exists",
+    try:
+        check_speciality = await SpecialityDAO.get_one_or_none(
+            session=session, filters={"name": speciality_data.name}
         )
-    speciality = await SpecialityDAO.add(session, values=speciality_data)
-    return {"message": "Speciality created", "speciality": speciality}
+        if check_speciality:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Group already exists",
+            )
+        speciality = await SpecialityDAO.add(session, values=speciality_data)
+        return {"message": "Speciality created", "speciality": speciality}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.get("/{speciality_id}", status_code=status.HTTP_200_OK)
@@ -36,8 +44,13 @@ async def get_speciality_by_id(
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
     check_speciality: Annotated[Speciality, Depends(check_speciality_by_id)],
 ):
-    # return create_speciality
-    return {"speciality": SpecialityReadSchema(**check_speciality.to_dict())}
+    try:
+        return {"speciality": SpecialityReadSchema(**check_speciality.to_dict())}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.patch("{speciality_id}", status_code=status.HTTP_200_OK)
@@ -47,19 +60,21 @@ async def update_speciality(
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
     check_speciality: Annotated[Speciality, Depends(check_speciality_by_id)],
 ):
-    speciality = await SpecialityDAO.update(
-        session=session, values=speciality_data, filters={"id": speciality_id}
-    )
+    try:
+        speciality = await SpecialityDAO.update(
+            session=session, values=speciality_data, filters={"id": speciality_id}
+        )
 
-    if speciality:
-        return {
-            "message": "Speciality updated",
-            "speciality": SpecialityReadSchema(**speciality.to_dict()),
-        }
-    raise HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail="Failed to update user role. Please try again later.",
-    )
+        if speciality:
+            return {
+                "message": "Speciality updated",
+                "speciality": SpecialityReadSchema(**speciality.to_dict()),
+            }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.delete("/{speciality_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -68,12 +83,14 @@ async def delete_speciality(
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
     check_speciality: Annotated[Speciality, Depends(check_speciality_by_id)],
 ):
-    speciality_deleted = await SpecialityDAO.delete(
-        session=session, filters={"id": speciality_id}
-    )
-    if not speciality_deleted:
+    try:
+        speciality_deleted = await SpecialityDAO.delete(
+            session=session, filters={"id": speciality_id}
+        )
+        if speciality_deleted:
+            return
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete user. Please try again later.",
+            detail="Failed to update user. Please try again later.",
         )
-    return

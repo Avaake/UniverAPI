@@ -19,17 +19,24 @@ async def create_course(
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
     check_teacher: Annotated[User, Depends(verify_user_is_teacher)],
 ):
-    print(check_teacher)
-    check_course = await CourseDAO.get_one_or_none(
-        session=session, filters={"name": course_data.name}
-    )
-    if check_course:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Course already exists",
+    try:
+        check_course = await CourseDAO.get_one_or_none(
+            session=session, filters={"name": course_data.name}
         )
-    course = await CourseDAO.add(session=session, values=course_data)
-    return {"message": "Course created", "course": course}
+        if check_course:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Course already exists",
+            )
+        course = await CourseDAO.add(session=session, values=course_data)
+        return {"message": "Course created", "course": course}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.get("/{course_id}")
@@ -38,7 +45,13 @@ async def get_course_by_id(
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
     check_course: Annotated[Course, Depends(check_course_by_id)],
 ):
-    return {"course": CourseReadSchema(**check_course.to_dict())}
+    try:
+        return {"course": CourseReadSchema(**check_course.to_dict())}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.patch("/{course_id}")
@@ -49,20 +62,21 @@ async def update_course(
     check_course: Annotated[Course, Depends(check_course_by_id)],
     check_teacher: Annotated[User, Depends(verify_user_is_teacher)],
 ):
-    print(check_teacher)
-    course = await CourseDAO.update(
-        session=session, values=course_data, filters={"id": course_id}
-    )
+    try:
+        course = await CourseDAO.update(
+            session=session, values=course_data, filters={"id": course_id}
+        )
 
-    if course:
-        return {
-            "message": "Course updated",
-            "course": CourseReadSchema(**course.to_dict()),
-        }
-    raise HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail="Failed to delete user. Please try again later.",
-    )
+        if course:
+            return {
+                "message": "Course updated",
+                "course": CourseReadSchema(**course.to_dict()),
+            }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.delete("/{course_id}")
@@ -71,10 +85,14 @@ async def delete_course(
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
     check_course: Annotated[Course, Depends(check_course_by_id)],
 ):
-    course_deleted = await CourseDAO.delete(session=session, filters={"id": course_id})
-    if not course_deleted:
+    try:
+        course_deleted = await CourseDAO.delete(
+            session=session, filters={"id": course_id}
+        )
+        if course_deleted:
+            return
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete user. Please try again later.",
+            detail="Failed to update user. Please try again later.",
         )
-    return

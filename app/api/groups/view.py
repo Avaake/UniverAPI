@@ -16,14 +16,24 @@ async def create_group(
     current_user: Annotated[User, Depends(get_current_admin_user)],
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ) -> dict[str, GroupReadSchema]:
-    check_group = await GroupDAO.get_one_or_none(session=session, filters=group_data)
-    if check_group:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Group already exists",
+    try:
+        check_group = await GroupDAO.get_one_or_none(
+            session=session, filters=group_data
         )
-    group = await GroupDAO.add(session=session, values=group_data)
-    return {"message": "Group created", "group": group}
+        if check_group:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Group already exists",
+            )
+        group = await GroupDAO.add(session=session, values=group_data)
+        return {"message": "Group created", "group": group}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.get("/{group_id}", status_code=status.HTTP_200_OK)
@@ -33,7 +43,13 @@ async def get_group_by_id(
     check_group: Annotated[Group, Depends(check_group_by_id)],
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ) -> dict[str, GroupReadSchema]:
-    return {"group": GroupReadSchema(**check_group.to_dict())}
+    try:
+        return {"group": GroupReadSchema(**check_group.to_dict())}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.put("/{group_id}", status_code=status.HTTP_200_OK)
@@ -44,18 +60,20 @@ async def update_group(
     check_group: Annotated[Group, Depends(check_group_by_id)],
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ) -> dict[str, GroupReadSchema]:
-    group = await GroupDAO.update(
-        session=session, values=data, filters={"id": group_id}
-    )
-    if group:
-        return {
-            "message": "Group updated",
-            "group": GroupReadSchema(**check_group.to_dict()),
-        }
-    raise HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail="Failed to update user role. Please try again later.",
-    )
+    try:
+        group = await GroupDAO.update(
+            session=session, values=data, filters={"id": group_id}
+        )
+        if group:
+            return {
+                "message": "Group updated",
+                "group": GroupReadSchema(**check_group.to_dict()),
+            }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.delete("/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -65,10 +83,12 @@ async def delete_group(
     check_group: Annotated[Group, Depends(check_group_by_id)],
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ) -> None:
-    user_deleted = await GroupDAO.delete(session=session, filters={"id": group_id})
-    if not user_deleted:
+    try:
+        group_deleted = await GroupDAO.delete(session=session, filters={"id": group_id})
+        if group_deleted:
+            return
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete user. Please try again later.",
+            detail="Failed to update user. Please try again later.",
         )
-    return

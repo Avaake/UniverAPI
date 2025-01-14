@@ -5,7 +5,7 @@ from app.api.roles.dependencies import check_role_by_id
 from app.core import settings, User, db_helper, Role
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.roles.dao import RoleDAO
-from typing import Annotated
+from typing import Annotated, Union
 
 
 router = APIRouter(prefix=settings.api_prefix.role, tags=["Role"])
@@ -16,24 +16,38 @@ async def create_role(
     role_data: BaseRoleSchema,
     current_user: Annotated[User, Depends(get_current_admin_user)],
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
-) -> dict[str, RoleSchemaRead]:
-    role_info = await RoleDAO.get_one_or_none(session, filters=role_data)
-    if role_info:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Role already exists",
-        )
+) -> dict[str, Union[str, RoleSchemaRead]]:
+    try:
+        role_info = await RoleDAO.get_one_or_none(session, filters=role_data)
+        if role_info:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Role already exists",
+            )
 
-    role = await RoleDAO.add(session=session, values=role_data)
-    return {"message": "Role created", "role": role}
+        role = await RoleDAO.add(session=session, values=role_data)
+        return {"message": "Role created", "role": role}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.get("", status_code=status.HTTP_200_OK)
 async def get_roles(
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ) -> dict[str, list[RoleSchemaRead]]:
-    roles = await RoleDAO.get_all(session=session)
-    return {"roles": roles}
+    try:
+        roles = await RoleDAO.get_all(session=session)
+        return {"roles": roles}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.get("/{role_id}", status_code=status.HTTP_200_OK)
@@ -42,7 +56,13 @@ async def get_role_by_id(
     check_role: Annotated[Role, Depends(check_role_by_id)],
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ) -> dict[str, RoleSchemaRead]:
-    return {"role": RoleSchemaRead(**check_role.to_dict())}
+    try:
+        return {"role": RoleSchemaRead(**check_role.to_dict())}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.put("/{role_id}", status_code=status.HTTP_200_OK)
@@ -53,31 +73,36 @@ async def update_role(
     check_role: Annotated[Role, Depends(check_role_by_id)],
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ):
-    role = await RoleDAO.update(
-        session=session, values=role_data, filters={"id": role_id}
-    )
-    if role:
-        return {
-            "message": "Role updated",
-            "role": role,
-        }
-    raise HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail="Failed to update user. Please try again later.",
-    )
+    try:
+
+        role = await RoleDAO.update(
+            session=session, values=role_data, filters={"id": role_id}
+        )
+        if role:
+            return {
+                "message": "Role updated",
+                "role": role,
+            }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
-@router.delete("/{role_id}")
+@router.delete("/{role_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_role(
     role_id: Annotated[int, Path(ge=0)],
     current_user: Annotated[User, Depends(get_current_admin_user)],
     check_role: Annotated[Role, Depends(check_role_by_id)],
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ):
-    role = await RoleDAO.delete(session=session, filters={"id": role_id})
-    if role:
-        return
-    raise HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail="Failed to delete user. Please try again later.",
-    )
+    try:
+        role = await RoleDAO.delete(session=session, filters={"id": role_id})
+        if role:
+            return
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
