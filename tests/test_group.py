@@ -1,5 +1,6 @@
 import pytest
 
+
 @pytest.mark.asyncio
 async def test_create_group(async_client, token_admin):
     response = await async_client.post(
