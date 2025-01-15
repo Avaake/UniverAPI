@@ -5,7 +5,7 @@ from app.api.groups.dependencies import check_group_by_id
 from app.core import settings, db_helper, Group, User
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.groups.dao import GroupDAO
-from typing import Annotated
+from typing import Annotated, Union
 
 router = APIRouter(prefix=settings.api_prefix.group, tags=["Groups"])
 
@@ -15,7 +15,7 @@ async def create_group(
     group_data: GroupBaseSchema,
     current_user: Annotated[User, Depends(get_current_admin_user)],
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
-) -> dict[str, GroupReadSchema]:
+) -> dict[str, Union[str, GroupReadSchema]]:
     try:
         check_group = await GroupDAO.get_one_or_none(
             session=session, filters=group_data
@@ -26,7 +26,7 @@ async def create_group(
                 detail="Group already exists",
             )
         group = await GroupDAO.add(session=session, values=group_data)
-        return {"message": "Group created", "group": group}
+        return {"message": "Group created", "group": GroupReadSchema(**group.to_dict())}
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -59,7 +59,7 @@ async def update_group(
     current_user: Annotated[User, Depends(get_current_admin_user)],
     check_group: Annotated[Group, Depends(check_group_by_id)],
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
-) -> dict[str, GroupReadSchema]:
+) -> dict[str, Union[str, GroupReadSchema]]:
     try:
         group = await GroupDAO.update(
             session=session, values=data, filters={"id": group_id}
