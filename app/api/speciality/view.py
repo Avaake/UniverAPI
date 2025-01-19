@@ -6,9 +6,10 @@ from app.api.speciality.schemas import (
 )
 from app.api.speciality.dao import SpecialityDAO
 from typing import Annotated
-from app.core import db_helper, settings, Speciality
+from app.core import db_helper, settings, Speciality, User
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.speciality.dependencies import check_speciality_by_id
+from app.api.auth.dependencies import get_current_admin_user
 
 router = APIRouter(prefix=settings.api_prefix.specialities, tags=["Speciality"])
 
@@ -16,6 +17,7 @@ router = APIRouter(prefix=settings.api_prefix.specialities, tags=["Speciality"])
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_speciality(
     speciality_data: SpecialityBaseSchema,
+    current_user: Annotated[User, Depends(get_current_admin_user)],
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ):
     try:
@@ -25,7 +27,7 @@ async def create_speciality(
         if check_speciality:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Group already exists",
+                detail="Speciality already exists",
             )
         speciality = await SpecialityDAO.add(session, values=speciality_data)
         return {"message": "Speciality created", "speciality": speciality}
@@ -42,6 +44,7 @@ async def create_speciality(
 async def get_speciality_by_id(
     speciality_id: Annotated[int, Path(ge=0)],
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
+    current_user: Annotated[User, Depends(get_current_admin_user)],
     check_speciality: Annotated[Speciality, Depends(check_speciality_by_id)],
 ):
     try:
@@ -53,11 +56,12 @@ async def get_speciality_by_id(
         )
 
 
-@router.patch("{speciality_id}", status_code=status.HTTP_200_OK)
+@router.patch("/{speciality_id}", status_code=status.HTTP_200_OK)
 async def update_speciality(
     speciality_id: Annotated[int, Path(ge=0)],
     speciality_data: SpecialityUpdateSchema,
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
+    current_user: Annotated[User, Depends(get_current_admin_user)],
     check_speciality: Annotated[Speciality, Depends(check_speciality_by_id)],
 ):
     try:
@@ -81,6 +85,7 @@ async def update_speciality(
 async def delete_speciality(
     speciality_id: Annotated[int, Path(ge=0)],
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
+    current_user: Annotated[User, Depends(get_current_admin_user)],
     check_speciality: Annotated[Speciality, Depends(check_speciality_by_id)],
 ):
     try:
