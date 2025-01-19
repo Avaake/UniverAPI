@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, status
+from app.api.auth.dependencies import get_current_admin_user
 from app.api.course.dao import CourseDAO
 from app.api.course.dependencies import check_course_by_id, verify_user_is_teacher
 from app.api.course.schemas import (
@@ -10,13 +11,14 @@ from typing import Annotated
 from app.core import db_helper, settings, User, Course
 from sqlalchemy.ext.asyncio import AsyncSession
 
-router = APIRouter(prefix=settings.api_prefix.courses, tags=["courseS"])
+router = APIRouter(prefix=settings.api_prefix.courses, tags=["Courses"])
 
 
-@router.post("")
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_course(
     course_data: BaseCourseSchema,
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
+    current_user: Annotated[User, Depends(get_current_admin_user)],
     check_teacher: Annotated[User, Depends(verify_user_is_teacher)],
 ):
     try:
@@ -39,7 +41,7 @@ async def create_course(
         )
 
 
-@router.get("/{course_id}")
+@router.get("/{course_id}", status_code=status.HTTP_200_OK)
 async def get_course_by_id(
     course_id: int,
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
@@ -54,11 +56,12 @@ async def get_course_by_id(
         )
 
 
-@router.patch("/{course_id}")
+@router.patch("/{course_id}", status_code=status.HTTP_200_OK)
 async def update_course(
     course_id: int,
     course_data: CourseUpdateSchema,
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
+    current_user: Annotated[User, Depends(get_current_admin_user)],
     check_course: Annotated[Course, Depends(check_course_by_id)],
     check_teacher: Annotated[User, Depends(verify_user_is_teacher)],
 ):
@@ -79,10 +82,11 @@ async def update_course(
         )
 
 
-@router.delete("/{course_id}")
+@router.delete("/{course_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_course(
     course_id: int,
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
+    current_user: Annotated[User, Depends(get_current_admin_user)],
     check_course: Annotated[Course, Depends(check_course_by_id)],
 ):
     try:
