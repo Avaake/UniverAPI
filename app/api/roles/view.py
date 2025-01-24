@@ -6,7 +6,7 @@ from app.core import settings, User, db_helper, Role
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.roles.dao import RoleDAO
 from typing import Annotated, Union
-
+from app.core import get_or_409
 
 router = APIRouter(prefix=settings.api_prefix.role, tags=["Role"])
 
@@ -18,12 +18,12 @@ async def create_role(
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ) -> dict[str, Union[str, RoleSchemaRead]]:
     try:
-        role_info = await RoleDAO.get_one_or_none(session, filters=role_data)
-        if role_info:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Role already exists",
-            )
+        await get_or_409(
+            session=session,
+            dao=RoleDAO,
+            filters=role_data,
+            detail="Role already exists",
+        )
 
         role = await RoleDAO.add(session=session, values=role_data)
         return {"message": "Role created", "role": role}

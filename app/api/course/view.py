@@ -10,6 +10,7 @@ from app.api.course.schemas import (
 from typing import Annotated
 from app.core import db_helper, settings, User, Course
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core import get_or_409
 
 router = APIRouter(prefix=settings.api_prefix.courses, tags=["Courses"])
 
@@ -22,14 +23,12 @@ async def create_course(
     check_teacher: Annotated[User, Depends(verify_user_is_teacher)],
 ):
     try:
-        check_course = await CourseDAO.get_one_or_none(
-            session=session, filters={"name": course_data.name}
+        await get_or_409(
+            session=session,
+            dao=CourseDAO,
+            filters=course_data,
+            detail="Course already exists",
         )
-        if check_course:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Course already exists",
-            )
         course = await CourseDAO.add(session=session, values=course_data)
         return {"message": "Course created", "course": course}
     except HTTPException as e:

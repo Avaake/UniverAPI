@@ -6,6 +6,7 @@ from app.core import settings, db_helper, Group, User
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.groups.dao import GroupDAO
 from typing import Annotated, Union
+from app.core import get_or_409
 
 router = APIRouter(prefix=settings.api_prefix.group, tags=["Groups"])
 
@@ -17,14 +18,12 @@ async def create_group(
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ) -> dict[str, Union[str, GroupReadSchema]]:
     try:
-        check_group = await GroupDAO.get_one_or_none(
-            session=session, filters=group_data
+        await get_or_409(
+            session=session,
+            dao=GroupDAO,
+            filters=group_data,
+            detail="Group already exists",
         )
-        if check_group:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Group already exists",
-            )
         group = await GroupDAO.add(session=session, values=group_data)
         return {"message": "Group created", "group": GroupReadSchema(**group.to_dict())}
     except HTTPException as e:

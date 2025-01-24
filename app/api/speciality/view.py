@@ -10,6 +10,7 @@ from app.core import db_helper, settings, Speciality, User
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.speciality.dependencies import check_speciality_by_id
 from app.api.auth.dependencies import get_current_admin_user
+from app.core import get_or_409
 
 router = APIRouter(prefix=settings.api_prefix.specialities, tags=["Speciality"])
 
@@ -21,14 +22,12 @@ async def create_speciality(
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ):
     try:
-        check_speciality = await SpecialityDAO.get_one_or_none(
-            session=session, filters={"name": speciality_data.name}
+        await get_or_409(
+            session=session,
+            dao=SpecialityDAO,
+            filters=speciality_data,
+            detail="Speciality already exists",
         )
-        if check_speciality:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Speciality already exists",
-            )
         speciality = await SpecialityDAO.add(session, values=speciality_data)
         return {"message": "Speciality created", "speciality": speciality}
     except HTTPException as e:

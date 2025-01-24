@@ -19,6 +19,8 @@ from app.api.auth.dependencies import (
     get_current_user_access_token,
 )
 
+from app.core import get_or_409
+
 router = APIRouter(prefix=settings.api_prefix.auth, tags=["Auth"])
 
 
@@ -27,15 +29,12 @@ async def register_user(
     user_data: AuthRegistrationSchema,
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ) -> dict:
-    user = await AuthDAO.get_one_or_none(
+    await get_or_409(
         session=session,
+        dao=AuthDAO,
         filters=EmailSchema(email=user_data.email),
+        detail="User already registered",
     )
-    if user:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="User already registered",
-        )
     user_data_dict = user_data.model_dump()
     del user_data_dict["confirm_password"]
     await AuthDAO.add(session=session, values=AuthAddSchema(**user_data_dict))
