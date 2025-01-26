@@ -13,15 +13,15 @@ class Enrollment(Base):
     """
 
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=True
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     group_id: Mapped[int] = mapped_column(
-        ForeignKey("groups.id", ondelete="CASCADE"), nullable=True
+        ForeignKey("groups.id", ondelete="CASCADE"), nullable=False
     )
     speciality_id: Mapped[int] = mapped_column(
-        ForeignKey("specialities.id", ondelete="CASCADE"), nullable=True
+        ForeignKey("specialities.id", ondelete="CASCADE"), nullable=False
     )
-    academic_year: Mapped[int] = mapped_column(SmallInteger, nullable=True)
+    academic_year: Mapped[int] = mapped_column(SmallInteger, nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="enrollments")
     group: Mapped["Group"] = relationship(back_populates="enrollments")
