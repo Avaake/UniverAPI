@@ -10,6 +10,7 @@ __all__ = [
     "Course",
     "get_or_404",
     "get_or_409",
+    "configurate_logger",
 ]
 
 from .config import settings
@@ -22,3 +23,4 @@ from app.core.models.speciality import Speciality
 from app.core.models.enrollment import Enrollment
 from app.core.models.course import Course
 from app.core.utils import get_or_404, get_or_409
+from app.core.logger_config import configurate_logger

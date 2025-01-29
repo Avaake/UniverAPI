@@ -2,12 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status, Path
 from app.api.roles.schemas import BaseRoleSchema, RoleSchemaRead
 from app.api.auth.dependencies import get_current_admin_user
 from app.api.roles.dependencies import check_role_by_id
-from app.core import settings, User, db_helper, Role
+from app.core import settings, User, db_helper, Role, configurate_logger
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.roles.dao import RoleDAO
 from typing import Annotated, Union
 from app.core import get_or_409
 
+log = configurate_logger(level="WARNING")
 router = APIRouter(prefix=settings.api_prefix.role, tags=["Role"])
 
 
@@ -26,10 +27,14 @@ async def create_role(
         )
 
         role = await RoleDAO.add(session=session, values=role_data)
+
+        log.info("Created new role: {}", role.id)
         return {"message": "Role created", "role": role}
-    except HTTPException as e:
-        raise e
-    except Exception as e:
+    except HTTPException as err:
+        log.warning("HTTP error occurred: {}", err)
+        raise err
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -43,7 +48,8 @@ async def get_roles(
     try:
         roles = await RoleDAO.get_all(session=session)
         return {"roles": roles}
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -58,7 +64,8 @@ async def get_role_by_id(
 ) -> dict[str, RoleSchemaRead]:
     try:
         return {"role": RoleSchemaRead(**check_role.to_dict())}
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -79,11 +86,13 @@ async def update_role(
             session=session, values=role_data, filters={"id": role_id}
         )
         if role:
+            log.info("Updated role: {}", role_id)
             return {
                 "message": "Role updated",
                 "role": role,
             }
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -100,8 +109,10 @@ async def delete_role(
     try:
         role = await RoleDAO.delete(session=session, filters={"id": role_id})
         if role:
+            log.info("Deleted role: {}", role_id)
             return
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",

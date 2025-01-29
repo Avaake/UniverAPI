@@ -8,10 +8,11 @@ from app.api.course.schemas import (
     CourseUpdateSchema,
 )
 from typing import Annotated
-from app.core import db_helper, settings, User, Course
+from app.core import db_helper, settings, User, Course, configurate_logger
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core import get_or_409
 
+log = configurate_logger(level="WARNING")
 router = APIRouter(prefix=settings.api_prefix.courses, tags=["Courses"])
 
 
@@ -30,10 +31,14 @@ async def create_course(
             detail="Course already exists",
         )
         course = await CourseDAO.add(session=session, values=course_data)
+
+        log.info("Created course {}", course.id)
         return {"message": "Course created", "course": course}
-    except HTTPException as e:
-        raise e
-    except Exception as e:
+    except HTTPException as err:
+        log.warning("HTTP error occurred: {}", str(err))
+        raise err
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -48,7 +53,8 @@ async def get_course_by_id(
 ):
     try:
         return {"course": CourseReadSchema(**check_course.to_dict())}
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -70,11 +76,13 @@ async def update_course(
         )
 
         if course:
+            log.info("Updated course {}", course_id)
             return {
                 "message": "Course updated",
                 "course": CourseReadSchema(**course.to_dict()),
             }
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -84,17 +92,19 @@ async def update_course(
 @router.delete("/{course_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_course(
     course_id: int,
-    session: Annotated[AsyncSession, Depends(db_helper.transaction)],
-    current_user: Annotated[User, Depends(get_current_admin_user)],
     check_course: Annotated[Course, Depends(check_course_by_id)],
-):
+    current_user: Annotated[User, Depends(get_current_admin_user)],
+    session: Annotated[AsyncSession, Depends(db_helper.transaction)],
+) -> None:
     try:
         course_deleted = await CourseDAO.delete(
             session=session, filters={"id": course_id}
         )
         if course_deleted:
+            log.info("Deleted course {}", course_id)
             return
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",

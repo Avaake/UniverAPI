@@ -1,7 +1,7 @@
 from app.api.users.dependencies import check_access_to_user, check_user_by_id
 from fastapi import APIRouter, status, HTTPException, Depends, Path
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core import settings, User, db_helper
+from app.core import settings, User, db_helper, configurate_logger
 from app.api.auth.dependencies import (
     get_current_user_access_token,
     get_current_admin_user,
@@ -15,6 +15,8 @@ from app.api.users.schemas import (
 )
 from typing import Annotated, Union
 
+log = configurate_logger(level="WARNING")
+
 router = APIRouter(prefix=settings.api_prefix.user, tags=["Users"])
 
 
@@ -24,7 +26,8 @@ async def get_me(
 ) -> UserReadSchema:
     try:
         return UserReadSchema.model_validate(user_data)
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -40,7 +43,8 @@ async def get_user_by_id(
 ) -> UserReadSchema:
     try:
         return UserReadSchema(**check_user.to_dict())
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -57,7 +61,8 @@ async def get_users_by_role(
             session=session, role_name=role_name
         )
         return UserReadListSchema(users=users)
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -77,11 +82,13 @@ async def update_user_role(
             session=session, values=role_data, filters={"id": user_id}
         )
         if new_user_role:
+            log.info("User role updated {}", user_id)
             return {
                 "message": "User role updated",
                 "user": UserReadSchema.model_validate(new_user_role),
             }
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -101,11 +108,13 @@ async def update_user(
             session=session, values=new_user_data, filters={"id": user_id}
         )
         if user:
+            log.info("User updated {}", user_id)
             return {
                 "message": "User updated",
                 "user": UserReadSchema.model_validate(user),
             }
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -122,8 +131,10 @@ async def delete_user(
     try:
         user_deleted = await UserDAO.delete(session=session, filters={"id": user_id})
         if user_deleted:
+            log.info("User deleted {}", user_id)
             return
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",

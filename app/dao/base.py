@@ -1,9 +1,12 @@
 from typing import TypeVar, Generic
-from app.core import Base
+from app.core import Base, configurate_logger
+from fastapi import status, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select, update, delete
+
+log = configurate_logger(level="WARNING")
 
 T = TypeVar("T", bound=Base)
 
@@ -24,7 +27,14 @@ class BaseDAO(Generic[T]):
             result = await session.execute(query)
             record = result.scalar_one_or_none()
             return record
+        except ConnectionRefusedError as e:
+            log.error("Database connection error occurred: {}", str(e), exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update user. Please try again later.",
+            )
         except SQLAlchemyError as e:
+            log.warning("Database error occurred: {}", str(e), exc_info=True)
             raise e
 
     @classmethod
@@ -34,7 +44,14 @@ class BaseDAO(Generic[T]):
             result = await session.execute(query)
             record = result.scalar_one_or_none()
             return record
+        except ConnectionRefusedError as e:
+            log.error("Database connection error occurred: {}", str(e), exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update user. Please try again later.",
+            )
         except SQLAlchemyError as e:
+            log.warning("Database error occurred: {}", str(e), exc_info=True)
             raise e
 
     @classmethod
@@ -45,8 +62,15 @@ class BaseDAO(Generic[T]):
             session.add(new_instance)
             await session.commit()
             return new_instance
+        except ConnectionRefusedError as e:
+            log.error("Database connection error occurred: {}", str(e), exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update user. Please try again later.",
+            )
         except SQLAlchemyError as e:
             await session.rollback()
+            log.warning("Database error occurred: {}", str(e), exc_info=True)
             raise e
 
     @classmethod
@@ -63,6 +87,7 @@ class BaseDAO(Generic[T]):
             record = result.scalars().all()
             return record
         except SQLAlchemyError as e:
+            log.warning("Database error occurred: {}", str(e), exc_info=True)
             raise e
 
     @classmethod
@@ -96,9 +121,15 @@ class BaseDAO(Generic[T]):
             if update_record is None:
                 return None
             return update_record
-
+        except ConnectionRefusedError as e:
+            log.error("Database connection error occurred: {}", str(e), exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update user. Please try again later.",
+            )
         except SQLAlchemyError as e:
             await session.rollback()
+            log.warning("Database error occurred: {}", str(e), exc_info=True)
             raise e
 
     @classmethod
@@ -112,6 +143,13 @@ class BaseDAO(Generic[T]):
             record = await session.execute(query)
             await session.commit()
             return record.rowcount
+        except ConnectionRefusedError as e:
+            log.error("Database connection error occurred: {}", str(e), exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update user. Please try again later.",
+            )
         except SQLAlchemyError as e:
             await session.rollback()
+            log.warning("Database error occurred: {}", str(e), exc_info=True)
             raise e

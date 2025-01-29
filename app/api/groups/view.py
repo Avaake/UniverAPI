@@ -2,12 +2,14 @@ from app.api.groups.schemas import GroupBaseSchema, GroupUpdateSchema, GroupRead
 from fastapi import APIRouter, HTTPException, status, Depends, Path
 from app.api.auth.dependencies import get_current_admin_user
 from app.api.groups.dependencies import check_group_by_id
-from app.core import settings, db_helper, Group, User
+from app.core import settings, db_helper, Group, User, configurate_logger
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.groups.dao import GroupDAO
 from typing import Annotated, Union
 from app.core import get_or_409
 
+
+log = configurate_logger(level="WARNING")
 router = APIRouter(prefix=settings.api_prefix.group, tags=["Groups"])
 
 
@@ -25,10 +27,14 @@ async def create_group(
             detail="Group already exists",
         )
         group = await GroupDAO.add(session=session, values=group_data)
+
+        log.info("Created group {}", group.id)
         return {"message": "Group created", "group": GroupReadSchema(**group.to_dict())}
-    except HTTPException as e:
-        raise e
-    except Exception as e:
+    except HTTPException as err:
+        log.warning("HTTP error occurred: {}", err)
+        raise err
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -44,7 +50,8 @@ async def get_group_by_id(
 ) -> dict[str, GroupReadSchema]:
     try:
         return {"group": GroupReadSchema(**check_group.to_dict())}
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -64,11 +71,13 @@ async def update_group(
             session=session, values=data, filters={"id": group_id}
         )
         if group:
+            log.info("Updated group {}", group_id)
             return {
                 "message": "Group updated",
                 "group": GroupReadSchema(**check_group.to_dict()),
             }
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -85,8 +94,10 @@ async def delete_group(
     try:
         group_deleted = await GroupDAO.delete(session=session, filters={"id": group_id})
         if group_deleted:
+            log.info("Deleted group {}", group_id)
             return
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",

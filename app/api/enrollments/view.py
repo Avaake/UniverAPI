@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Path
 from app.api.auth.dependencies import get_current_admin_user
-from app.core import Enrollment, db_helper, settings, User
+from app.core import Enrollment, db_helper, settings, User, configurate_logger
 from typing import Annotated, Union
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.enrollments.dao import EnrollmentDAO
@@ -10,6 +10,8 @@ from app.api.enrollments.dependencies import (
     check_enrollment_by_id,
 )
 from app.core import get_or_409
+
+log = configurate_logger(level="WARNING")
 
 router = APIRouter(prefix=settings.api_prefix.enrollments, tags=["Enrollments"])
 
@@ -35,13 +37,17 @@ async def create_enrollment(
             detail="Enrollment already exists",
         )
         enrollment = await EnrollmentDAO.add(session=session, values=enrollment_data)
+
+        log.info("Created enrollment {}", enrollment.id)
         return {
             "message": "Enrollment created",
             "enrollment": enrollment,
         }
-    except HTTPException as e:
-        raise e
-    except Exception as e:
+    except HTTPException as err:
+        log.warning("HTTP error occurred: {}", err)
+        raise err
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -56,7 +62,8 @@ async def get_enrollment_by_id(
 ):
     try:
         return {"course": BaseEnrollmentSchema(**check_enrollment.to_dict())}
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -75,12 +82,14 @@ async def update_enrollment(
         enrollment = await EnrollmentDAO.update(
             session=session, values=enrollment_data, filters={"id": enrollment_id}
         )
-        print(enrollment.to_dict())
+
+        log.info("Updated enrollment {}", enrollment_id)
         return {
             "message": "Enrollment updated",
             "enrollment": BaseEnrollmentSchema(**enrollment.to_dict()),
         }
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -100,8 +109,10 @@ async def delete_enrollment(
             filters={"id": enrollment_id},
         )
         if enrollment_deleted:
+            log.info("Deleted enrollment {}", enrollment_id)
             return
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",

@@ -6,12 +6,13 @@ from app.api.speciality.schemas import (
 )
 from app.api.speciality.dao import SpecialityDAO
 from typing import Annotated
-from app.core import db_helper, settings, Speciality, User
+from app.core import db_helper, settings, Speciality, User, configurate_logger
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.speciality.dependencies import check_speciality_by_id
 from app.api.auth.dependencies import get_current_admin_user
 from app.core import get_or_409
 
+log = configurate_logger(level="WARNING")
 router = APIRouter(prefix=settings.api_prefix.specialities, tags=["Speciality"])
 
 
@@ -29,10 +30,14 @@ async def create_speciality(
             detail="Speciality already exists",
         )
         speciality = await SpecialityDAO.add(session, values=speciality_data)
+
+        log.info("Created speciality", speciality.id)
         return {"message": "Speciality created", "speciality": speciality}
-    except HTTPException as e:
-        raise e
-    except Exception as e:
+    except HTTPException as err:
+        log.warning("HTTP error occurred: {}", err)
+        raise err
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -48,7 +53,8 @@ async def get_speciality_by_id(
 ):
     try:
         return {"speciality": SpecialityReadSchema(**check_speciality.to_dict())}
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -69,11 +75,13 @@ async def update_speciality(
         )
 
         if speciality:
+            log.info("Updated speciality {}", speciality.id)
             return {
                 "message": "Speciality updated",
                 "speciality": SpecialityReadSchema(**speciality.to_dict()),
             }
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -92,8 +100,10 @@ async def delete_speciality(
             session=session, filters={"id": speciality_id}
         )
         if speciality_deleted:
+            log.info("Deleted speciality {}", speciality_id)
             return
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",

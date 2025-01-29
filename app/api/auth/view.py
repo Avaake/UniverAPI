@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status, HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core import db_helper, settings, User
+from app.core import db_helper, settings, User, configurate_logger
 from app.api.auth.dao import AuthDAO
 from typing import Annotated
 from app.api.auth.schemas import (
@@ -21,6 +21,8 @@ from app.api.auth.dependencies import (
 
 from app.core import get_or_409
 
+log = configurate_logger(level="WARNING")
+
 router = APIRouter(prefix=settings.api_prefix.auth, tags=["Auth"])
 
 
@@ -29,16 +31,25 @@ async def register_user(
     user_data: AuthRegistrationSchema,
     session: Annotated[AsyncSession, Depends(db_helper.transaction)],
 ) -> dict:
-    await get_or_409(
-        session=session,
-        dao=AuthDAO,
-        filters=EmailSchema(email=user_data.email),
-        detail="User already registered",
-    )
-    user_data_dict = user_data.model_dump()
-    del user_data_dict["confirm_password"]
-    await AuthDAO.add(session=session, values=AuthAddSchema(**user_data_dict))
-    return {"message": "You have been successfully registered!"}
+    try:
+        await get_or_409(
+            session=session,
+            dao=AuthDAO,
+            filters=EmailSchema(email=user_data.email),
+            detail="User already registered",
+        )
+        user_data_dict = user_data.model_dump()
+        del user_data_dict["confirm_password"]
+        await AuthDAO.add(session=session, values=AuthAddSchema(**user_data_dict))
+
+        log.info("User registered - {}", user_data.email)
+        return {"message": "You have been successfully registered!"}
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user. Please try again later.",
+        )
 
 
 @router.post("/login")
@@ -65,14 +76,17 @@ async def login(
         response.set_cookie(key="access_token", value=access_token, httponly=True)
         response.set_cookie(key="refresh_token", value=refresh_token, httponly=True)
 
+        log.info("User login - {}", user_data.email)
         return {
             "message": "You have been logged in!",
             "access_token": access_token,
             "refresh_token": refresh_token,
         }
-    except HTTPException as e:
-        raise e
-    except Exception as e:
+    except HTTPException as err:
+        log.warning("HTTP error occurred: {}", err)
+        raise err
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -97,7 +111,8 @@ async def refresh(
             "access_token": access_token,
             "refresh_token": refresh_token,
         }
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -110,7 +125,8 @@ async def logout(response: Response) -> dict:
         response.delete_cookie(key="access_token")
         response.delete_cookie(key="refresh_token")
         return {"message": "The user has successfully logged out"}
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
@@ -123,7 +139,8 @@ async def protected(
 ) -> dict:
     try:
         return {"message": "You are authorized"}
-    except Exception as e:
+    except Exception as err:
+        log.warning("Error occurred: {}", str(err), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user. Please try again later.",
