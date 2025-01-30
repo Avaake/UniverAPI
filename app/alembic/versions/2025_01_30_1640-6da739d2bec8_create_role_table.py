@@ -1,8 +1,8 @@
-"""create group table
+"""create role table
 
-Revision ID: de0e73e848bc
-Revises: 6637f26cc03a
-Create Date: 2024-12-27 21:59:31.730971
+Revision ID: 6da739d2bec8
+Revises: 
+Create Date: 2025-01-30 16:40:47.358756
 
 """
 
@@ -13,17 +13,17 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "de0e73e848bc"
-down_revision: Union[str, None] = "6637f26cc03a"
+revision: str = "6da739d2bec8"
+down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
     op.create_table(
-        "groups",
+        "roles",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
-        sa.Column("name", sa.VARCHAR(length=50), nullable=False),
+        sa.Column("name", sa.String(), nullable=False),
         sa.Column(
             "created_at",
             sa.TIMESTAMP(timezone=True),
@@ -36,10 +36,10 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.PrimaryKeyConstraint("id", name=op.f("pk_groups")),
-        sa.UniqueConstraint("name", name=op.f("uq_groups_name")),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_roles")),
+        sa.UniqueConstraint("name", name=op.f("uq_roles_name")),
     )
 
 
 def downgrade() -> None:
-    op.drop_table("groups")
+    op.drop_table("roles")
