@@ -6,18 +6,6 @@ from contextlib import asynccontextmanager
 from asgi_lifespan import LifespanManager
 from typing import AsyncGenerator
 from sqlalchemy import NullPool
-import logging
-
-
-def logger():
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.StreamHandler()
-        ],  # Додайте цей handler для виведення на екран
-    )
-    return logging
 
 
 ClientManagerType = AsyncGenerator[AsyncClient, None]
