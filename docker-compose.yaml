@@ -1,4 +1,20 @@
 services:
+  app:
+    container_name: univer_api
+    build: ./
+    depends_on:
+      - postgres_db
+    volumes:
+      - ./app:/src/app
+    ports:
+      - "8000:8000"
+    restart: always
+    env_file:
+      - ./app/.env
+    command: bash -c "while !</dev/tcp/postgres_db/5432; do sleep 2; done; alembic upgrade head; python3 -m app.main"
+#    command: bash -c "while !</dev/tcp/postgres_db/5432; do sleep 2; done; python3 -m pytest ./tests/ -v; alembic upgrade head; python3 -m app.main"
+
+
   postgres_db:
     image: postgres:15
     container_name: postgres_univer_db
@@ -18,7 +34,15 @@ services:
     stdin_open: true
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
+#  postgres_db_test:
+#    image: postgres:15
+#    container_name: postgres_univer_db_test
+#    environment:
+#      POSTGRES_USER: admin_test
+#      POSTGRES_PASSWORD: admin_password_test
+#      POSTGRES_DB: postgres_univer_db_test
+#    ports:
+#      - "5433:5432"
 volumes:
   postgres_data:
 

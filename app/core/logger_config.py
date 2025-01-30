@@ -2,7 +2,7 @@ import sys
 from loguru import logger
 
 
-def configurate_logger(level="DEBUG", log_file="app.log"):
+def configurate_logger(level="INFO", log_file="app.log"):
     logger.remove()
 
     logger.add(

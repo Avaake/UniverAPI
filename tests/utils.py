@@ -21,8 +21,9 @@ def logger():
 
 
 ClientManagerType = AsyncGenerator[AsyncClient, None]
-DATABASE_URL = "postgresql+asyncpg://admin_test:admin_password_test@localhost:5433/postgres_univer_db_test"
 metadata = Base.metadata
+DATABASE_URL = "postgresql+asyncpg://admin_test:admin_password_test@postgres_db_test:5433/postgres_univer_db_test"
+
 
 engine_test = create_async_engine(
     DATABASE_URL,
